@@ -63,7 +63,7 @@ class AbstractWidget extends AbstractNode {
 
 		let bodyStr = this._serializeWidgetBody(ctx);
 		let importStr = this._getImportListString(ctx);
-		let shapeDataStr = this._getShapeDataProps(ctx);
+		let shapeDataStr = this._getShapeDataProps(ctx,bodyStr);
 		let buildMethodsStr = this._getBuildMethods(ctx);
 		let str = importStr + "\n" +
 			`class ${this.widgetName} extends StatelessWidget {\n` +
@@ -126,13 +126,16 @@ class AbstractWidget extends AbstractNode {
 		return str;
 	}
 
-	_getShapeDataProps(ctx) {
+	_getShapeDataProps(ctx,bodyStr) {
 		let str = "", names = {};
 		for (let [k, node] of Object.entries(this._shapeData)) {
 			const name = NodeUtils.getShapeDataName(node, ctx);
 			if (names[name]) { continue; }
 			names[name] = true;
-			str += `const String ${name} = '${node.toSvgString(ctx)}';\n`;
+			// 只有页面使用的场景生成 svg 代码
+			if(bodyStr.indexOf(name)>-1){
+				str += `const String ${name} = '${node.toSvgString(ctx)}';\n`;
+			}
 		}
 		return str;
 	}
@@ -145,6 +148,9 @@ class AbstractWidget extends AbstractNode {
 			if (ctx.target === ContextTarget.FILES || !o.isWidgetImport) {
 				str += `import '${o.name}'${o.scope ?  `as ${o.scope}` : ''};\n`;
 			}
+		}
+		if(NodeUtils.Wutil()==".w"){
+			str += `import 'package:flutter_screenutil/flutter_screenutil.dart';\n`;
 		}
 		return str;
 	}

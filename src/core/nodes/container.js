@@ -162,7 +162,7 @@ class Container extends AbstractNode {
 		let radii = this.xdNode.cornerRadii;
 		let tl = radii.topLeft, tr = radii.topRight, br = radii.bottomRight, bl = radii.bottomLeft;
 		if (tl === tr && tl === br && tl === bl) {
-			return `BorderRadius.circular(${$.fix(tl, 2)})`;
+			return `BorderRadius.circular(${$.fix(tl, 2)}${NodeUtils.Wutil()})`;
 		} else {
 			return 'BorderRadius.only(' +
 				this._getRadiusParam("topLeft", tl) +
@@ -175,7 +175,7 @@ class Container extends AbstractNode {
 
 	_getRadiusParam(param, value) {
 		if (value <= 1) { return ''; }
-		return `${param}: Radius.circular(${$.fix(value, 2)}), `;
+		return `${param}: Radius.circular(${$.fix(value, 2)}${NodeUtils.Wutil()}), `;
 	}
 
 
@@ -185,8 +185,8 @@ class Container extends AbstractNode {
 		if (!s || !s.visible) { return ""; }
 		return "boxShadow: [BoxShadow(" +
 			`color: ${ExportUtils.getColor(s.color, NodeUtils.getOpacity(xdNode))}, ` +
-			`offset: Offset(${s.x}, ${s.y}), ` +
-			`blurRadius: ${s.blur}, ` +
+			`offset: Offset(${s.x}${NodeUtils.Wutil()}, ${s.y}${NodeUtils.Wutil()}), ` +
+			`blurRadius: ${s.blur}${NodeUtils.Wutil()}, ` +
 		"), ], ";
 	}
 

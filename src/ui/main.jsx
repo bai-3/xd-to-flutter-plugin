@@ -36,7 +36,12 @@ class FlutterPanel extends Component {
 
 	exportSelectedItem() {
 		editDocument({ editLabel: "Export widget" }, async (selected, root) => {
-			this.updateResults(await dart_export.exportSelected(selected, root));
+			try{
+				let res = await dart_export.exportSelected(selected, root);
+				this.updateResults(res);
+			}catch(e){
+				console.log(e)
+			}
 		});
 	}
 
@@ -48,7 +53,12 @@ class FlutterPanel extends Component {
 
 	exportAll() {
 		editDocument({ editLabel: "Export all widgets" }, async (selected, root) => {
-			this.updateResults(await dart_export.exportAll(selected, root));
+			try{
+				let res = await dart_export.exportAll(selected, root);
+				this.updateResults(res);
+			}catch(e){
+				console.log(e)
+			}
 		});
 	}
 

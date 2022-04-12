@@ -8,12 +8,13 @@ it. If you have received this file from a source other than Adobe,
 then your use, modification, or distribution of it requires the prior
 written permission of Adobe. 
 */
-
+const xd = require("scenegraph");
 const $ = require("../../utils/utils");
 const { getAlignment } = require("../../utils/exportutils");
 const { addSizedBox, getGroupContentBounds, hasComplexTransform } = require("../../utils/layoututils");
 
 const { AbstractDecorator } = require("./abstractdecorator");
+const NodeUtils = require("../../utils/nodeutils");
 
 class Layout extends AbstractDecorator {
 	static create(node, ctx) { throw("Layout.create() called."); }
@@ -97,7 +98,11 @@ class Layout extends AbstractDecorator {
 
 		// work from inside out:
 		nodeStr = this._transform(nodeStr, ctx);
-		if (this.shouldFixSize) { nodeStr = addSizedBox(nodeStr, this.bounds, ctx); }
+		if (this.shouldFixSize) {
+			if(type != LayoutType.PINNED){
+				nodeStr = addSizedBox(nodeStr, this.bounds, ctx);
+			}
+		}
 		else { nodeStr = this._expand(nodeStr, ctx); }
 
 		if (this.padding) { nodeStr = this._padding(nodeStr, ctx); }
@@ -113,6 +118,7 @@ class Layout extends AbstractDecorator {
 	_expand(nodeStr, ctx) {
 		// PINNED doesn't require expansion, and other types are all fixed size.
 		if (this.shouldExpand && !this.isFixedSize && this.type === LayoutType.NONE) {
+			if (!nodeStr.endsWith(",")) nodeStr = nodeStr + ","
 			return `SizedBox.expand(child: ${nodeStr})`;
 		}
 		return nodeStr;
@@ -123,47 +129,108 @@ class Layout extends AbstractDecorator {
 		// ^ can use _isFullWidth/Height
 		let constraints = this.xdNode.layout.resizeConstraints;
 		let o = constraints && constraints.values;
-		return "Pinned.fromPins(" +
-			this._getHPin(o, this.bounds, this.parentBounds) + ", " +
-			this._getVPin(o, this.bounds, this.parentBounds) + ", " +
-			`child: ${nodeStr}, ` +
-		")";
+		if(this.xdNode.parent instanceof xd.Artboard){
+			return nodeStr
+		}
+		let vertical = this._getVPin(o, this.bounds, this.parentBounds)
+		let horizontal = this._getHPin(o, this.bounds, this.parentBounds)
+		if(vertical.start<=2&&vertical.end<=2&&horizontal.start<=2&&horizontal.end<=2){
+			return nodeStr
+		}
+		
+		if(this.direction === LayoutDirection.HORIZONTAL){
+			// Column
+			// console.log("垂直布局: "+JSON.stringify(vertical))
+			let columnIndex = nodeStr.indexOf("Column(")
+			if(columnIndex<4&&columnIndex>-1&&vertical.middle){
+				let crossIndex = nodeStr.indexOf("CrossAxisAlignment.start")
+				return nodeStr.slice(0,crossIndex) +"CrossAxisAlignment.center"+nodeStr.slice(crossIndex+24)
+			}
+		}else if(this.direction === LayoutDirection.VERTICAL){
+			// Row
+			// console.log("横向布局: "+JSON.stringify(horizontal))
+			let rowIndex = nodeStr.indexOf("Row(")
+			if(rowIndex<4&&rowIndex>-1&&horizontal.middle){
+				let crossIndex = nodeStr.indexOf("CrossAxisAlignment.start")
+				return nodeStr.slice(0,crossIndex) +"CrossAxisAlignment.center"+nodeStr.slice(crossIndex+24)
+			}
+		}
+
+		let margin =""
+		if(vertical.start>0) margin =`top: ${vertical.start}${NodeUtils.Wutil()}`
+		if(horizontal.end>0){
+			if(margin!="") margin = margin+","
+			margin=margin+`right: ${horizontal.end}${NodeUtils.Wutil()}`
+		} 
+		if(vertical.end>0){
+			if(margin!="") margin = margin+","
+			margin=margin+`bottom: ${vertical.end}${NodeUtils.Wutil()}`
+		} 
+		if(horizontal.start>0){
+			if(margin!="") margin = margin+","
+			margin=margin+`left: ${horizontal.start}${NodeUtils.Wutil()}`
+		}
+		
+		// console.log("垂直布局: "+JSON.stringify(vertical))
+		// console.log("横向布局: "+JSON.stringify(horizontal))
+		// console.log(margin)
+		return 'Container( // margin布局 \n' +
+			`margin: EdgeInsets.only(`+margin+`),` +
+			`child: ${nodeStr},` +
+		')';
+
+		// return "Pinned.fromPins(" +
+		// 	this._getHPin(o, this.bounds, this.parentBounds) + ", " +
+		// 	this._getVPin(o, this.bounds, this.parentBounds) + ", " +
+		// 	`child: ${nodeStr}, ` +
+		// ")";
 	}
 
 	_getHPin(o, b, pb) {
+		if(!o) { return this._getDefaultPin(); }
 		if (this.direction === LayoutDirection.HORIZONTAL) { return this._getDefaultPin(); }
 		return this._getPin(o.left, o.width, o.right,  b.x, b.width,  pb.width);
 	}
 
 	_getVPin(o, b, pb) {
+		if(!o) { return this._getDefaultPin(); }
 		if (this.direction === LayoutDirection.VERTICAL) { return this._getDefaultPin(); }
 		return this._getPin(o.top, o.height, o.bottom,  b.y, b.height,  pb.height);
 	}
 	
 	_getDefaultPin() {
-		return "Pin()";
+		return {start:0,end:0};
 	}
 
 	_getPin(cSt, cSz, cEnd,  bSt, bSz,  pSz) {
 		// c = constraints, b = bounds, p = parent bounds
 		let fix = $.fix, end = pSz - (bSt + bSz);
-		let middle = (pSz === bSz) ? 0.5 : bSt / (pSz - bSz);
+		let middle = (pSz === bSz) ? 0.5 : fix(bSt / (pSz - bSz));
 		let params = [
-			(cSz ? `size: ${fix(bSz)}` : null),
-			(cSt ? `start: ${fix(bSt)}` : null),
-			(cEnd ? `end: ${fix(end)}` : null),
+			(cSz ? `size: ${fix(bSz)}` : `size: ${fix(bSz)}`),
+			(cSt ? `start: ${fix(bSt)}` : `start: ${fix(bSt)}`),
+			(cEnd ? `end: ${fix(end)}` : `end: ${fix(end)}`),
 			(!cSt && !cSz ? `startFraction: ${fix(bSt/pSz, 4)}` : null),
 			(!cEnd && !cSz ? `endFraction: ${fix(end/pSz, 4)}` : null),
 			(cSz && !cSt && !cEnd ? `middle: ${fix(middle, 4)}` : null)
 		];
-		return "Pin(" + $.joinValues(params) + ")";
+		let res = {}
+		params = params.filter(n => n != null && n !== "")
+		for (let index = 0; index < params.length; index++) {
+			const item = params[index];
+			item.replaceAll(" ","")
+			let items = item.split(":")
+			res[items[0]]= Number(items[1])
+		}
+		return res
+		// return "Pin(" + $.joinValues(params) + ")";
 	}
 
 	_translate(nodeStr, ctx) {
 		let bounds = this.bounds;
 		let isOrigin = $.almostEqual(bounds.x, 0, 0.1) && $.almostEqual(bounds.y, 0, 0.1);
 		return isOrigin ? nodeStr : "Transform.translate(" +
-			`offset: Offset(${$.fix(bounds.x)}, ${$.fix(bounds.y)}), ` +
+			`offset: Offset(${$.fix(bounds.x)}${NodeUtils.Wutil()}, ${$.fix(bounds.y)}${NodeUtils.Wutil()}), ` +
 			`child: ${nodeStr},` +
 		")";
 	}
@@ -217,13 +284,13 @@ class Layout extends AbstractDecorator {
 				return `EdgeInsets.all(${$.fix(l)})`;
 			}
 			return "EdgeInsets.symmetric(" +
-				`horizontal: ${$.fix(l)}, ` +
-				`vertical: ${$.fix(t)} ` +
+				`horizontal: ${$.fix(l)}${NodeUtils.Wutil()}, ` +
+				`vertical: ${$.fix(t)}${NodeUtils.Wutil()} ` +
 			")";
 		}
 		// leave out trailing commas to prevent auto-format from putting every value on a new line:
 		return "EdgeInsets.fromLTRB(" +
-			`${$.fix(l)}, ${$.fix(t)}, ${$.fix(r)}, ${$.fix(b)} ` +
+			`${$.fix(l)}${NodeUtils.Wutil()}, ${$.fix(t)}${NodeUtils.Wutil()}, ${$.fix(r)}${NodeUtils.Wutil()}, ${$.fix(b)}${NodeUtils.Wutil()} ` +
 		")";
 	}
 

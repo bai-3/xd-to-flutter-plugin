@@ -222,7 +222,7 @@ function _getFontFamily(o) {
 }
 
 function _getFontSizeParam(o) {
-	return `fontSize: ${o.fontSize}, `;
+	return `fontSize: ${o.fontSize}${NodeUtils.Wutil()}, `;
 }
 
 function _getColorParam(o, fill) {
@@ -274,7 +274,9 @@ function _getHeightParam(o) {
 	// XD reports a lineSpacing of 0 to indicate default spacing.
 	// Flutter uses a multiplier against the font size for its "height" value.
 	// XD uses a pixel value.
-	return (o.lineSpacing === 0 ? "" : `height: ${o.lineSpacing / o.fontSize}, `);
+	let h = o.lineSpacing / o.fontSize
+	h = Math.floor(h * Math.pow(10, 2)) / Math.pow(10, 2);
+	return (o.lineSpacing === 0 ? "" : `height: ${h}, `);
 }
 
 function _getShadowsParam(xdNode) {

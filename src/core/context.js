@@ -117,7 +117,8 @@ class Context {
 	}
 
 	usesPinned() {
-		this.addImport("package:adobe_xd/pinned.dart");
+		// this.addImport("package:adobe_xd/pinned.dart");
+		// console.log("wu: "+NodeUtils.Wutil())
 	}
 
 	addBuildMethod(name, str) {

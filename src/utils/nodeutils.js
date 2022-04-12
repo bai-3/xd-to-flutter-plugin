@@ -40,6 +40,13 @@ function getProp(xdNode, prop) {
 }
 exports.getProp = getProp;
 
+// 获取宽度单位
+function Wutil() {
+    let wu = getProp(xd.root,PropType.EXPORT_WIDTH_UNIT)
+    return wu?wu:"";
+}
+exports.Wutil = Wutil;
+
 function setProp(xdNode, prop, value) {
 	let o = xdNode.pluginData || {};
 	o[prop] = value;

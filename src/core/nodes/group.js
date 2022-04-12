@@ -21,6 +21,7 @@ const { fix } = require("../../utils/utils");
 const { addSizedBox } = require("../../utils/layoututils");
 const { ExportMode, DEFAULT_CUSTOM_CODE, REQUIRED_PARAM } = require("../constants");
 
+const AddUtils = require("../../utils/addutils");
 
 class Group extends AbstractNode {
 	static create(xdNode, ctx) {
@@ -82,6 +83,19 @@ class Group extends AbstractNode {
 	}
 
 	_serialize(ctx) {
+		// 标记为导出时
+		if(this.xdNode.markedForExport){
+			let imgPath = AddUtils.addToGenerate(this.xdNode,ctx)
+		
+			let h = this.xdNode.localBounds.height;
+			let w = this.xdNode.localBounds.width;
+			return 'Image( // 导出标记元素:\n' +
+				`width: ${fix(w)}${NodeUtils.Wutil()},` +
+				`height: ${fix(h)}${NodeUtils.Wutil()},` +
+				`image: AssetImage('${imgPath}',),` +
+			')';
+		}
+
 		// TODO: reconcile decorators with export modes.
 		if (this.mode === ExportMode.CUSTOM) {
 			return this._getCustomCode(ctx);
@@ -98,7 +112,12 @@ class Group extends AbstractNode {
 		if (layout.type == "stack") {
 			str = this._serializeFlex(ctx);
 		} else {
-			str = this._getChildStack(this._normalizeChildren(), ctx);
+			let nodes =  this._normalizeChildren()
+			if(this.background){
+				str = nodes[0] && nodes[0].serialize(ctx);
+			}else{
+				str = this._getChildStack(this._normalizeChildren(), ctx);
+			}
 		}
 
 		str = this._addPadding(str, ctx);
@@ -142,7 +161,8 @@ class Group extends AbstractNode {
 		let isVertical = layout.stack.orientation == "vertical";
 
 		let str = (isVertical ? "Column(" : "Row(") +
-			"crossAxisAlignment: CrossAxisAlignment.stretch, " +
+			"crossAxisAlignment: CrossAxisAlignment.start," +
+			"mainAxisAlignment: MainAxisAlignment.start," +
 			`children: <Widget>[${this._getFlexChildren(ctx)}], ` +
 		")";
 		return str;
@@ -155,17 +175,30 @@ class Group extends AbstractNode {
 		let spaces = normalizeSpacings(xdLayout.stack.spacings, this.children.length-1).reverse();
 		let kids = this._normalizeChildren().reverse();
 
+		// 减掉溢出值
+		let hasSub = false
 		kids.forEach((node, i) => {
 			if (!node) { return; }
 			node.layout.shouldFixSize = false; // handled below
 
 			let childStr = node.serialize(ctx);
 			let size = isVertical ? node.xdNode.localBounds.height : node.xdNode.localBounds.width;
-			childStr = `SizedBox(${isVertical ? 'height' : 'width'}: ${fix(size)}, child: ${childStr}, )`;
-			if (!childStr) { return; }
+			
+			// 删除不必要 SizedBox
+			childStr = childStr.replace(/(^\s*)|(\s*$)/g, "");
+			if(!(childStr.indexOf("Image(")==0)){
+				childStr = `SizedBox(${isVertical ? 'height' : 'width'}: ${fix(size)}${NodeUtils.Wutil()}, child: ${childStr}, )`;
+			}
 
+			if (!childStr) { return; } 
+			// 填空白空间
 			if (space = spaces[i-1]) {
-				str += `SizedBox(${isVertical ? 'height' : 'width'}: ${fix(space)}, ), `;
+				if(space<0) space = 0
+				if(space>20&&!hasSub) {
+					space = fix(space-3)
+					hasSub = true
+				}
+				str += `SizedBox(${isVertical ? 'height' : 'width'}: ${space}${NodeUtils.Wutil()}, ), `;
 			}
 
 			str += childStr + ", ";
@@ -179,11 +212,37 @@ class Group extends AbstractNode {
 		bgNode.layout.enabled = false;
 		// this is just for the error generation:
 		hasComplexTransform(bgNode, "Rotation and flip are not supported for background elements.", ctx);
-		return 'Stack(children: [\n' +
-			'// background:\n' +
-			`Positioned.fill(child: ${bgNode.serialize(ctx)}, ), ` +
-			`Positioned.fill(child: ${str}, ), ` +
-		'], )';
+		bgNode.serialize(ctx)
+		
+		let decoration = "BoxDecoration("
+		// 背景颜色
+		if(bgNode.xdNode.fill){
+			decoration = decoration+`color: ${AddUtils._getBackgroundColor(ctx,bgNode.xdNode)},`
+		}
+		// 边框
+		if (bgNode.xdNode.strokeEnabled) { 
+			decoration = decoration + AddUtils._getBorderParam(ctx,bgNode.xdNode)
+		}
+		// 圆角
+		decoration = decoration+AddUtils._getBorderRadiusParam(ctx,bgNode.xdNode)
+		decoration = decoration+")"
+		
+		let i = str.indexOf("Padding(")
+		if(i==0){
+			str = str.slice(8)
+			return 'Container( // 背景合成元素:\n' +
+			`decoration: ${decoration}, ` +
+			`${str}`;
+		}
+		return 'Container( // 背景合成元素:\n' +
+			`decoration: ${decoration},` +
+			`child: ${str}` +
+		')';
+		// return 'Stack(children: [\n' +
+		// 	'// background:\n' +
+		// 	`Positioned.fill(child: ${bgNode.serialize(ctx)}, ), ` +
+		// 	`Positioned.fill(child: ${str}, ), ` +
+		// '], )';
 	}
 
 	_addPadding(str, ctx) {
@@ -193,7 +252,7 @@ class Group extends AbstractNode {
 		return 'Padding(' +
 			`padding: EdgeInsets.` + (pad.homogenous ?
 				`all(${fix(pad.top)})` :
-				`fromLTRB(${fix(pad.left)}, ${fix(pad.top)}, ${fix(pad.right)}, ${fix(pad.bottom)})`) +
+				`fromLTRB(${fix(pad.left)}${NodeUtils.Wutil()}, ${fix(pad.top)}${NodeUtils.Wutil()}, ${fix(pad.right)}${NodeUtils.Wutil()}, ${fix(pad.bottom)}${NodeUtils.Wutil()})`) +
 			`, child: ${str}, ` +
 		')';
 	}

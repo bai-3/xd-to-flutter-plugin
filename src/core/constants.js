@@ -28,10 +28,12 @@ exports.ExportModeOptions = [
 	{id: ExportMode.CUSTOM, label: "Replace with custom code"},
 ];
 
-exports.DEFAULT_CUSTOM_CODE = "Text('Hello World')";
-exports.DEFAULT_CLASS_PREFIX = "XD";
-exports.DEFAULT_COLORS_CLASS_NAME = "XDColors";
-exports.DEFAULT_CHAR_STYLES_CLASS_NAME = "XDTextStyles";
+exports.DEFAULT_CUSTOM_CODE = "Text('Ta')";
+exports.DEFAULT_CLASS_PREFIX = "";
+exports.DEFAULT_WIDTH = "";
+exports.DEFAULT_COLORS_CLASS_NAME = "GenColors";
+exports.DEFAULT_CHAR_STYLES_CLASS_NAME = "GenTextStyles";
+
 exports.HELP_URL = "https://github.com/AdobeXD/xd-to-flutter-plugin/blob/master/README.md";
 exports.REQUIRED_PARAM = {_:"required param"};
 
@@ -40,4 +42,8 @@ exports.DEFAULT_PLUGIN_DATA = {
 	[PropType.ENABLE_PROTOTYPE]: true,
 	[PropType.NORMALIZE_NAME_CASE]: true,
 	[PropType.INCLUDE_NAME_COMMENTS]: true,
+	[PropType.NULL_SAFE]: true,
+	[PropType.EXPORT_COLORS]: true,
+	[PropType.EXPORT_CHAR_STYLES]: true,
+	[PropType.EXPORT_WIDTH_UNIT]: exports.DEFAULT_WIDTH,
 };

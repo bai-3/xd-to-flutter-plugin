@@ -42,7 +42,7 @@ class Results extends Component {
         if (!props.context || !state.results) {
             return <div class='results-container'>
 				<span class={`version${version.debug ? ' alert' : ''}`}>{`${version.label} v${version.version}`}</span>
-				<a class='help' href={HELP_URL}>Need help?</a>
+				{/* <a class='help' href={HELP_URL}>Need help?</a> */}
 			</div>;
         }
         if (!props.context.log) { return <p>UNEXPECTED RESULT OBJECT!</p>; }

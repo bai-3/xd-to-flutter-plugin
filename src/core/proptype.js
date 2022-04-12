@@ -12,6 +12,7 @@ written permission of Adobe.
 module.exports = Object.freeze({
 	// Project
 	EXPORT_PATH: "exportPath",
+	EXPORT_WIDTH_UNIT: "exportWidthUnit",
 	CODE_PATH: "codePath",
 	IMAGE_PATH: "imagePath",
 	WIDGET_PREFIX: "widgetPrefix",

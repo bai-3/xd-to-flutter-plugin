@@ -104,7 +104,13 @@ class ProjectSettings extends Component {
     constructor(props) {
         super(props);
         initInputHandlers(this);
-        this.state = xd.root.pluginData || DEFAULT_PLUGIN_DATA;
+        let param = JSON.parse(JSON.stringify(DEFAULT_PLUGIN_DATA))
+        if(xd.root.pluginData){
+            for (const k in xd.root.pluginData) {
+                param[k] = xd.root.pluginData[k]
+            }
+        }
+        this.state = param;
     }
 
     setProjectFolder() {
@@ -112,7 +118,8 @@ class ProjectSettings extends Component {
     }
 
     shouldComponentUpdate() {
-        this.setState(NodeUtils.getState(xd.root));
+        console.log(NodeUtils.getState(xd.root))
+        // this.setState(NodeUtils.getState(xd.root));
     }
 
     render(_, state) {
@@ -126,30 +133,36 @@ class ProjectSettings extends Component {
 
                 <TextInputWithLabel
                     name={PropType.CODE_PATH}
-                    label={"CODE PATH"}
+                    label={"代码生成路径"}
                     placeholder={DefaultPath.CODE}
                     state={state}
                     handleInput={this.handleInput}
                     onBlur={this.handleBlurAsCleanPath} />
 
-                <TextInputWithLabel
+                {/* <TextInputWithLabel
                     name={PropType.IMAGE_PATH}
                     label={"IMAGE PATH"}
                     placeholder={DefaultPath.IMAGE}
                     state={state}
                     handleInput={this.handleInput}
-                    onBlur={this.handleBlurAsCleanPath} />
+                    onBlur={this.handleBlurAsCleanPath} /> */}
 
                 <TextInputWithLabel
                     name={PropType.WIDGET_PREFIX}
-					label={"WIDGET NAME PREFIX"}
+					label={"页面文件名前缀"}
 					placeholder=''
                     state={state}
                     handleInput={this.handleInput}
-                    onBlur={this.handleBlurAsClassName} />
+                    onBlur={this.handleBlurAsClassName} /> 
 
-
-                <span class='separator' />
+                <TextInputWithLabel
+                    name={PropType.EXPORT_WIDTH_UNIT}
+					label={"生成元素/字体大小单位"}
+					placeholder=''
+                    state={state}
+                    handleInput={this.handleInput}
+                    onBlur={this.cleanDartName} />
+                {/* <span class='separator' />
                 <label class='label'>SETTINGS</label>
 
                 <div class='wrapping-row'>
@@ -182,9 +195,9 @@ class ProjectSettings extends Component {
                         label={"Layer Name Comments"}
                         state={state}
                         handleInput={this.handleInput} />
-                </div>
+                </div> */}
 
-                <span class='separator' />
+                {/* <span class='separator' />
                 <label class='label'>EXPORT ASSETS</label>
 
 				<Checkbox
@@ -215,7 +228,7 @@ class ProjectSettings extends Component {
 					state={state}
 					handleInput={this.handleInput}
 					onBlur={this.handleBlurAsClassName} />
-				}
+				} */}
             </div>
         );
     }

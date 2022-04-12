@@ -32,13 +32,24 @@ class Artboard extends AbstractWidget {
 	}
 
 	_serializeWidgetBody(ctx) {
+		// 两个图层时直接使用图层作为背景
+		if(this.children[0].xdName=="bg" && this.children.length==2){
+			let node = this.children[1]
+			let childStr = node && node.serialize(ctx);
+			return `Scaffold(${this._getBackgroundColorParam(ctx)}body: ${childStr}, )`;
+		}
 		return `Scaffold(${this._getBackgroundColorParam(ctx)}body: ${this._getChildStack(this.children, ctx)}, )`;
 	}
 
 	_getBackgroundColorParam(ctx) {
 		let xdNode = this.xdNode, fill = xdNode.fillEnabled && xdNode.fill, color;
-		if (fill instanceof xd.Color) { color = fill; }
-		else if (fill) {
+		// 如果定义了背景图层，使用背景颜色
+		if(this.children[0].xdName=="bg"&&this.children[0].xdNode.fill){
+			fill = this.children[0].xdNode.fill
+		}
+		if (fill instanceof xd.Color) {
+			color = fill; 
+		} else if (fill) {
 			ctx.log.warn("Only solid color backgrounds are supported for artboards.", xdNode);
 			let stops = fill.colorStops;
 			if (stops && stops.length > 0) { color = stops[0].color; }

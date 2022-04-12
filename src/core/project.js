@@ -191,4 +191,5 @@ let project = new Project();
 module.exports = {
 	DefaultPath,
 	project,
+	_Folder,
 };

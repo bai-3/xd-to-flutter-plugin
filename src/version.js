@@ -15,7 +15,7 @@ const { alert } = require("./ui/alert");
 
 // Update for new builds:
 exports.version = "4.0.0";
-exports.debug = false;
+exports.debug = true;
 exports.xdVersionRequired = 42; // the actual minimum XD version required to run the plugin.
 
 // Calculated:

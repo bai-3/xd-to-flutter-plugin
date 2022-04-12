@@ -16,6 +16,7 @@ const clipboard = require("clipboard");
 const $ = require("../utils/utils");
 const NodeUtils = require("../utils/nodeutils");
 const ExportUtils = require("../utils/exportutils");
+const AddUtils = require("../utils/addutils");
 const { cleanIdentifierName, cleanDartName } = require("../utils/nameutils");
 
 const { trace } = require('../utils/debug');
@@ -77,7 +78,9 @@ async function exportAll(selection, root) {
 		if (NodeUtils.getProp(widgets[n].xdNode, PropType.INCLUDE_IN_EXPORT_PROJECT) === false)
 			continue;
 		++total;
+		AddUtils.queueStart(n.widgetName);
 		let fileName = await writeWidget(widgets[n], codeF, ctx);
+		await AddUtils.queueDo();
 		if (fileName) { count++; }
 	}
 
@@ -111,11 +114,15 @@ async function exportSelected(selection, root) {
 	let ctx = new Context(ContextTarget.FILES);
 	let fileName, node = parse(root, xdNode, ctx);
 	if (node) {
+		AddUtils.queueStart(node.widgetName);
 		// Write the widget we have selected to disk
 		fileName = await writeWidget(node, codeF, ctx);
 	}
 
+	await exportColors(ctx);
+	await exportCharStyles(ctx);
 	await project.validate(ctx);
+	await AddUtils.queueDo();
 
 	ctx.resultMessage = fileName ? `Exported '${fileName}' successfully` : "Widget export failed";
 	
@@ -202,7 +209,8 @@ async function exportCharStyles(ctx) {
 	let usedNames = {}, names = [];
 	let className = cleanDartName(NodeUtils.getProp(xd.root, PropType.CHAR_STYLES_CLASS_NAME)) ||
 		DEFAULT_CHAR_STYLES_CLASS_NAME;
-	let str = `import 'package:flutter/material.dart';\n\nclass ${className} {\n`;
+	let flutter_screenutil  = NodeUtils.Wutil()==".w"?`import 'package:flutter_screenutil/flutter_screenutil.dart';\n`:""
+	let str = `import 'package:flutter/material.dart';\n${flutter_screenutil}\nclass ${className} {\n`;
 	for (let i=0, l=entries.length; i<l; i++) {
 		let asset = entries[i], name = cleanIdentifierName(asset.name);
 		if (!name) { continue; }
@@ -210,10 +218,11 @@ async function exportCharStyles(ctx) {
 			ctx.log.warn(`Duplicate character style asset name: ${name}`);
 			continue;
 		}
+		console.log(asset)
 		usedNames[name] = true;
 		names.push(name);
 		let style = getTextStyle(getTextStyleParamList(asset.style, false, ctx));
-		if (style) { str += `\tstatic const TextStyle ${name} = const ${style};\n`; }
+		if (style) { str += `\tstatic TextStyle ${name} = ${style};\n`; }
 	}
 	str += '\n}';
 	str = _formatDart(str, false, ctx, null);

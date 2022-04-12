@@ -35,18 +35,19 @@ class Shape extends AbstractNode {
 		return this.nodes.length;
 	}
 
-	get adjustedBounds() {
-		if (!this.nodes) { return null; }
-		// Based on the composite view box, and not concerned with transformations.
-		this._calculateViewBox();
-		let xdNode = this.xdNode, pb = xdNode.parent.localBounds, vb = this.viewBox;
-		return {
-			x: vb.x - pb.x,
-			y: vb.y - pb.y,
-			width: vb.width,
-			height: vb.height,
-		}
-	}
+	// get adjustedBounds() {
+	// 	console.log(999)
+	// 	if (!this.nodes) { return null; }
+	// 	// Based on the composite view box, and not concerned with transformations.
+	// 	this._calculateViewBox();
+	// 	let xdNode = this.xdNode, pb = xdNode.parent.localBounds, vb = this.viewBox;
+	// 	return {
+	// 		x: vb.x - pb.x,
+	// 		y: vb.y - pb.y,
+	// 		width: vb.width,
+	// 		height: vb.height,
+	// 	}
+	// }
 
 	get transform() {
 		// The SVG string already accounts for the transform.

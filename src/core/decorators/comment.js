@@ -23,7 +23,10 @@ class Comment extends AbstractDecorator {
 	_serialize(nodeStr, ctx) {
 		let xdNode = this.node.xdNode;
 		let name = $.shorten(xdNode.name, 20), type = nodetype.getXDLabel(xdNode);
-		return `\n // Adobe XD layer: '${name}' (${type})\n${nodeStr}`;
+		let i = nodeStr.indexOf("(")
+		let nodeStrStart = nodeStr.slice(0, i + 1)
+		let nodeStrStop = nodeStr.slice(i + 1)
+		return `\n${nodeStrStart}\n // 设计图图层名: '${name}' (${type})\n ${nodeStrStop}`;
 	}
 }
 Comment.enabled = true;
