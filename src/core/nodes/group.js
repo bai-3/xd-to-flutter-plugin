@@ -225,7 +225,16 @@ class Group extends AbstractNode {
 		}
 		// 圆角
 		decoration = decoration+AddUtils._getBorderRadiusParam(ctx,bgNode.xdNode)
+		// 背景图片
+		if(bgNode.xdNode.markedForExport){
+			let imgPath = AddUtils.addToGenerate(bgNode.xdNode,ctx)
+			decoration = decoration + `image:DecorationImage(`+
+				`image: AssetImage('`+imgPath+`'),`+
+				`fit: BoxFit.cover,`+
+			'),';
+		}
 		decoration = decoration+")"
+		// console.log(bgNode.name)
 		
 		let i = str.indexOf("Padding(")
 		if(i==0){

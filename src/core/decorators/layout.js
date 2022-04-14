@@ -134,25 +134,28 @@ class Layout extends AbstractDecorator {
 		}
 		let vertical = this._getVPin(o, this.bounds, this.parentBounds)
 		let horizontal = this._getHPin(o, this.bounds, this.parentBounds)
+		// console.log(this.xdNode.name)
+		// console.log("垂直布局: "+JSON.stringify(vertical))
+		// console.log("横向布局: "+JSON.stringify(horizontal))
 		if(vertical.start<=2&&vertical.end<=2&&horizontal.start<=2&&horizontal.end<=2){
 			return nodeStr
 		}
 		
 		if(this.direction === LayoutDirection.HORIZONTAL){
 			// Column
-			// console.log("垂直布局: "+JSON.stringify(vertical))
+			// console.log("Column: LayoutDirection.HORIZONTAL")
 			let columnIndex = nodeStr.indexOf("Column(")
 			if(columnIndex<4&&columnIndex>-1&&vertical.middle){
 				let crossIndex = nodeStr.indexOf("CrossAxisAlignment.start")
-				return nodeStr.slice(0,crossIndex) +"CrossAxisAlignment.center"+nodeStr.slice(crossIndex+24)
+				nodeStr = nodeStr.slice(0,crossIndex) +"CrossAxisAlignment.center"+nodeStr.slice(crossIndex+24)
 			}
 		}else if(this.direction === LayoutDirection.VERTICAL){
 			// Row
-			// console.log("横向布局: "+JSON.stringify(horizontal))
+			// console.log("Row: LayoutDirection.VERTICAL")
 			let rowIndex = nodeStr.indexOf("Row(")
 			if(rowIndex<4&&rowIndex>-1&&horizontal.middle){
 				let crossIndex = nodeStr.indexOf("CrossAxisAlignment.start")
-				return nodeStr.slice(0,crossIndex) +"CrossAxisAlignment.center"+nodeStr.slice(crossIndex+24)
+				nodeStr = nodeStr.slice(0,crossIndex) +"CrossAxisAlignment.center"+nodeStr.slice(crossIndex+24)
 			}
 		}
 
